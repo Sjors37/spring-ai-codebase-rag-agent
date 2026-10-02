@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: spring-ai-codebase-rag-agent
+  ai:
+    model:
+      embedding: transformers
