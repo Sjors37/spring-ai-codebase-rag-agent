@@ -40,7 +40,8 @@ Example: *"How does the ticket creation flow work in this codebase?"*
 ### Run it
 
 ```bash
-export ANTHROPIC_API_KEY=your-key-here
+export ANTHROPIC_API_KEY=your-anthropic-key-here
+export OPENAI_API_KEY=your-openai-key-here
 ./mvnw spring-boot:run
 ```
 
