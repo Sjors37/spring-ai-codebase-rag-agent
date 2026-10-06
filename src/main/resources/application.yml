@@ -2,5 +2,7 @@ spring:
   application:
     name: spring-ai-codebase-rag-agent
   ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
     model:
       embedding: transformers
