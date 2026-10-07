@@ -25,7 +25,7 @@ Example: *"How does the ticket creation flow work in this codebase?"*
 
 - **Java 21**
 - **Spring Boot 4.0**
-- **Spring AI 2.0** — Anthropic chat model, in-process ONNX embeddings (`spring-ai-starter-model-transformers`, no external embedding API or separate server needed), `SimpleVectorStore`
+- **Spring AI 2.0** — Anthropic for chat (all four agents), OpenAI for embeddings (`spring-ai-starter-model-openai`, used for vector search only — no chat calls go to OpenAI), `SimpleVectorStore`
 - **JGit** (for cloning/reading a target repository, reused from `spring-ai-mcp-git-analyzer`)
 - **Maven**
 
@@ -34,7 +34,8 @@ Example: *"How does the ticket creation flow work in this codebase?"*
 ### Prerequisites
 - Java 21+
 - Maven
-- An Anthropic API key
+- An Anthropic API key (for the agents)
+- An OpenAI API key (for embeddings only)
 - A codebase to point it at — a local path or a public Git URL
 
 ### Run it
@@ -44,8 +45,6 @@ export ANTHROPIC_API_KEY=your-anthropic-key-here
 export OPENAI_API_KEY=your-openai-key-here
 ./mvnw spring-boot:run
 ```
-
-On first run, Spring AI downloads and caches a small local embedding model (one-time, a few tens of MB).
 
 ### Try it out
 
@@ -69,11 +68,12 @@ curl -X POST http://localhost:8080/chat \
 ./mvnw test
 ```
 
-The ingestion layer (file filtering, chunking, repository cloning, and the ingestion orchestration) is covered by unit tests that don't require a Spring context or the embedding model, so they run the same on every machine without any setup.
+The ingestion layer (file filtering, chunking, repository cloning, and the ingestion orchestration) and the controller are covered by unit/slice tests that don't require a Spring context with live model beans, so they run the same on every machine without any setup.
 
 ## Known limitations
 
 - **Latency and cost scale with the agent chain**: each question triggers at least three separate Claude calls (retrieval, answer, validation), and up to six if the first attempt isn't grounded — noticeably slower/costlier than a single-agent setup.
+- **Two API keys required** instead of one — embeddings use OpenAI rather than Anthropic, since Anthropic doesn't offer an embeddings API.
 - **No conversation memory** — same as the earlier two projects; each `/chat` request is stateless.
 - **`SimpleVectorStore` is in-memory** — the index is lost on restart; re-run `/ingest` after restarting the app.
 - **Retry logic is capped at 2 attempts** — if the codebase genuinely doesn't contain the answer, the agent says so rather than retrying indefinitely.
