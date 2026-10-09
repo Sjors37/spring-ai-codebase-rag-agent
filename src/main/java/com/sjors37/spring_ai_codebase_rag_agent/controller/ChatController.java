@@ -6,20 +6,17 @@ import com.sjors37.spring_ai_codebase_rag_agent.dto.ChatResponse;
 import com.sjors37.spring_ai_codebase_rag_agent.dto.IngestRequest;
 import com.sjors37.spring_ai_codebase_rag_agent.dto.IngestResponse;
 import com.sjors37.spring_ai_codebase_rag_agent.ingestion.CodebaseIngestionService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequiredArgsConstructor
 public class ChatController {
 
     private final PlannerAgent plannerAgent;
     private final CodebaseIngestionService codebaseIngestionService;
-
-    public ChatController(PlannerAgent plannerAgent, CodebaseIngestionService codebaseIngestionService) {
-        this.plannerAgent = plannerAgent;
-        this.codebaseIngestionService = codebaseIngestionService;
-    }
 
     @PostMapping("/ingest")
     public IngestResponse ingest(@RequestBody IngestRequest request) {
@@ -33,7 +30,6 @@ public class ChatController {
 
     @PostMapping("/chat")
     public ChatResponse chat(@RequestBody ChatRequest request) {
-        String reply = plannerAgent.handle(request.message());
-        return new ChatResponse(reply);
+        return new ChatResponse(plannerAgent.handle(request.message()));
     }
 }

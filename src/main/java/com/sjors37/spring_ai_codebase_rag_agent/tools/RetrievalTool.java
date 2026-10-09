@@ -1,5 +1,6 @@
 package com.sjors37.spring_ai_codebase_rag_agent.tools;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
@@ -8,15 +9,15 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class RetrievalTool {
 
-    private final VectorStore vectorStore;
+    private static final String PASSAGE_SEPARATOR = "\n\n---\n\n";
 
-    public RetrievalTool(VectorStore vectorStore) {
-        this.vectorStore = vectorStore;
-    }
+    private final VectorStore vectorStore;
 
     @Tool(description = "Searches the indexed codebase for passages relevant to a query. " +
             "Returns matching code/doc snippets along with their file path. " +
@@ -34,7 +35,6 @@ public class RetrievalTool {
 
         return results.stream()
                 .map(doc -> "[%s]\n%s".formatted(doc.getMetadata().get("filePath"), doc.getText()))
-                .reduce((a, b) -> a + "\n\n---\n\n" + b)
-                .orElse("");
+                .collect(Collectors.joining(PASSAGE_SEPARATOR));
     }
 }

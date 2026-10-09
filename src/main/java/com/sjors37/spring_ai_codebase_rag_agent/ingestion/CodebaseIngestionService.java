@@ -1,16 +1,20 @@
 package com.sjors37.spring_ai_codebase_rag_agent.ingestion;
 
+import lombok.RequiredArgsConstructor;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 @Service
+@RequiredArgsConstructor
 public class CodebaseIngestionService {
 
     private final GitRepositoryCloner gitRepositoryCloner;
@@ -18,32 +22,23 @@ public class CodebaseIngestionService {
     private final TextChunker textChunker;
     private final VectorStore vectorStore;
 
-    public CodebaseIngestionService(GitRepositoryCloner gitRepositoryCloner,
-                                    CodeFileReader codeFileReader,
-                                    TextChunker textChunker,
-                                    VectorStore vectorStore) {
-        this.gitRepositoryCloner = gitRepositoryCloner;
-        this.codeFileReader = codeFileReader;
-        this.textChunker = textChunker;
-        this.vectorStore = vectorStore;
-    }
-
-    public int ingest(String source) throws IOException, org.eclipse.jgit.api.errors.GitAPIException {
+    public int ingest(String source) throws IOException, GitAPIException {
         Path repoRoot = gitRepositoryCloner.prepareLocalPath(source);
-        List<CodeFileReader.CodeFile> files = codeFileReader.readRelevantFiles(repoRoot);
 
-        List<Document> documents = new ArrayList<>();
-        for (CodeFileReader.CodeFile file : files) {
-            List<String> chunks = textChunker.chunk(file.content());
-            for (int i = 0; i < chunks.size(); i++) {
-                documents.add(new Document(
-                        chunks.get(i),
-                        Map.of("filePath", file.relativePath(), "chunkIndex", i)
-                ));
-            }
-        }
+        List<Document> documents = codeFileReader.readRelevantFiles(repoRoot).stream()
+                .flatMap(this::toDocuments)
+                .toList();
 
         vectorStore.add(documents);
         return documents.size();
+    }
+
+    private Stream<Document> toDocuments(CodeFileReader.CodeFile file) {
+        List<String> chunks = textChunker.chunk(file.content());
+        return IntStream.range(0, chunks.size())
+                .mapToObj(i -> new Document(
+                        chunks.get(i),
+                        Map.of("filePath", file.relativePath(), "chunkIndex", i)
+                ));
     }
 }
