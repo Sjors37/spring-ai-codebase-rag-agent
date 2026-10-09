@@ -7,8 +7,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 @Component
 public class CodeFileReader {
@@ -27,21 +27,17 @@ public class CodeFileReader {
         try (Stream<Path> paths = Files.walk(repoRoot)) {
             return paths
                     .filter(Files::isRegularFile)
-                    .filter(this::isInExcludedDirectory)
+                    .filter(this::isNotInExcludedDirectory)
                     .filter(this::hasRelevantExtension)
                     .map(path -> toCodeFile(repoRoot, path))
                     .filter(file -> !file.content().isBlank())
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
 
-    private boolean isInExcludedDirectory(Path path) {
-        for (Path part : path) {
-            if (EXCLUDED_DIR_NAMES.contains(part.toString())) {
-                return false;
-            }
-        }
-        return true;
+    private boolean isNotInExcludedDirectory(Path path) {
+        return StreamSupport.stream(path.spliterator(), false)
+                .noneMatch(part -> EXCLUDED_DIR_NAMES.contains(part.toString()));
     }
 
     private boolean hasRelevantExtension(Path path) {
@@ -50,12 +46,11 @@ public class CodeFileReader {
     }
 
     private CodeFile toCodeFile(Path repoRoot, Path path) {
+        String relativePath = repoRoot.relativize(path).toString();
         try {
-            String content = Files.readString(path);
-            String relativePath = repoRoot.relativize(path).toString();
-            return new CodeFile(path, relativePath, content);
+            return new CodeFile(path, relativePath, Files.readString(path));
         } catch (IOException e) {
-            return new CodeFile(path, repoRoot.relativize(path).toString(), "");
+            return new CodeFile(path, relativePath, "");
         }
     }
 }

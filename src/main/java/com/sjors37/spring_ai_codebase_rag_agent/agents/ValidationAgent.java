@@ -4,6 +4,8 @@ import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
+
 @Component
 public class ValidationAgent {
 
@@ -27,6 +29,6 @@ public class ValidationAgent {
         String prompt = "Answer to validate:\n%s\n\nContext it should be based on:\n%s"
                 .formatted(answer, retrievedContext);
         String result = chatClient.prompt().user(prompt).call().content();
-        return result != null && result.trim().toUpperCase().startsWith("GROUNDED");
+        return result != null && result.strip().toUpperCase(Locale.ROOT).startsWith("GROUNDED");
     }
 }

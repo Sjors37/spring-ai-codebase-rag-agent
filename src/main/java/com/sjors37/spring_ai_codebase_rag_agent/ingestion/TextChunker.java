@@ -12,13 +12,11 @@ public class TextChunker {
     private static final int OVERLAP_CHARS = 200;
 
     public List<String> chunk(String text) {
-        List<String> chunks = new ArrayList<>();
-
         if (text.length() <= CHUNK_SIZE_CHARS) {
-            chunks.add(text);
-            return chunks;
+            return List.of(text);
         }
 
+        List<String> chunks = new ArrayList<>();
         int start = 0;
         while (start < text.length()) {
             int end = Math.min(start + CHUNK_SIZE_CHARS, text.length());
